@@ -127,6 +127,13 @@ app.post('/api/score', async (req, res) => {
 // Get results/tabulation
 app.get('/api/results', async (req, res) => {
   try {
+    // Get all judges first
+    const allJudges = await db.select().from(judges);
+    const judgeMap = {};
+    allJudges.forEach(j => {
+      judgeMap[j.id] = j.name;
+    });
+    
     // Get all scores with contestant and category details
     const allScores = await db
       .select({
@@ -156,13 +163,15 @@ app.get('/api/results', async (req, res) => {
         groupedResults[key] = {
           _id: key,
           contestant: {
-            _id: score.contestantId,
+            id: score.contestantId,
+            _id: score.contestantId, // Keep for backwards compatibility
             number: score.contestantNumber,
             name: score.contestantName,
             gender: score.contestantGender
           },
           category: {
-            _id: score.categoryId,
+            id: score.categoryId,
+            _id: score.categoryId, // Keep for backwards compatibility
             name: score.categoryName,
             gender: score.categoryGender
           },
@@ -173,6 +182,7 @@ app.get('/api/results', async (req, res) => {
       
       groupedResults[key].breakdown.push({
         judgeId: score.judgeId,
+        judgeName: judgeMap[score.judgeId] || `Judge ${score.judgeId}`,
         score: score.totalScore,
         criteriaScores: score.criteriaScores
       });
